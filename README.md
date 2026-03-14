@@ -1,23 +1,23 @@
 # Ktor Tasks API
 
-REST API на Ktor для работы с категориями и задачами. Проект использует реальную файловую базу H2, Exposed ORM, пул соединений HikariCP и автоматическое создание схемы через `SchemaUtils.create()` при старте приложения.
+A REST API built with Ktor for managing categories and tasks. The project uses a real file-based H2 database, Exposed ORM, HikariCP connection pooling, and automatic schema creation through `SchemaUtils.create()` on application startup.
 
-## Что реализовано
+## Implemented Features
 
-- Ktor REST API c JSON-сериализацией
-- Подключение к базе данных через HikariCP
-- Реальное хранение данных в H2 file database
-- Две связанные таблицы: `categories` -> `tasks` (One-to-Many)
-- Repository pattern с `suspend`-операциями
-- `dbQuery` wrapper для транзакций Exposed
-- Seed-данные при первом запуске
-- Полный CRUD для категорий и задач
-- Endpoint'ы для связанных данных и фильтрации
-- Обработка ошибок валидации, `not found` и database constraint violations
-- `CallLogging` для логирования всех запросов
-- Конфигурация базы через `application.yaml` и environment variables
+- Ktor REST API with JSON serialization
+- Database connection through HikariCP
+- Real persistent storage in an H2 file database
+- Two related tables: `categories` -> `tasks` (One-to-Many)
+- Repository pattern with `suspend` operations
+- `dbQuery` wrapper for Exposed transactions
+- Seed data on first startup
+- Full CRUD for categories and tasks
+- Endpoints for related data and filtering
+- Validation, not found, and database constraint error handling
+- `CallLogging` for request logging
+- Database configuration through `application.yaml` and environment variables
 
-## Стек
+## Tech Stack
 
 - Kotlin
 - Ktor
@@ -26,18 +26,18 @@ REST API на Ktor для работы с категориями и задачами. Проект использует реальную
 - H2 Database
 - kotlinx.serialization
 
-## Структура проекта
+## Project Structure
 
-- `src/main/kotlin/models` - таблицы Exposed, DTO и request-модели
-- `src/main/kotlin/database` - инициализация БД и `dbQuery`
-- `src/main/kotlin/repository` - репозитории и доменные исключения
+- `src/main/kotlin/models` - Exposed table definitions, DTOs, and request models
+- `src/main/kotlin/database` - database initialization and `dbQuery`
+- `src/main/kotlin/repository` - repositories and domain exceptions
 - `src/main/kotlin/routes` - REST endpoints
 - `src/main/kotlin/plugins` - Ktor plugins
-- `src/main/resources/application.yaml` - конфигурация приложения и БД
+- `src/main/resources/application.yaml` - application and database configuration
 
-## База данных
+## Database
 
-По умолчанию проект использует файловую H2-базу:
+By default, the project uses a file-based H2 database:
 
 ```yaml
 database:
@@ -48,33 +48,33 @@ database:
   maximumPoolSize: ${DB_MAX_POOL_SIZE:5}
 ```
 
-Это значит:
+This means:
 
-- данные сохраняются после перезапуска сервера
-- таблицы создаются автоматически при первом запуске
-- seed-данные добавляются только при первом запуске
+- data is preserved after server restarts
+- tables are created automatically on first startup
+- seed data is inserted only on first startup
 
-## Seed-данные
+## Seed Data
 
-При первом запуске автоматически создаются категории:
+On first startup, the following categories are created automatically:
 
 - Work
 - Study
 - Home
 
-Также добавляются 9 тестовых задач, привязанных к этим категориям.
+The application also inserts 9 test tasks linked to those categories.
 
-## Как запустить
+## How to Run
 
-### 1. Проверить JDK
+### 1. Check JDK
 
-Проект рассчитан на Java 21.
+The project targets Java 21.
 
 ```powershell
 java -version
 ```
 
-### 2. Запустить сервер
+### 2. Start the Server
 
 Windows PowerShell:
 
@@ -88,21 +88,21 @@ Linux/macOS:
 ./gradlew run
 ```
 
-После запуска приложение доступно по адресу:
+After startup, the application is available at:
 
 ```text
 http://localhost:8080
 ```
 
-Корневой endpoint должен возвращать:
+The root endpoint should return:
 
 ```text
 Ktor tasks API is running
 ```
 
-## Переменные окружения
+## Environment Variables
 
-При необходимости настройки можно переопределить через environment variables:
+You can override the configuration with environment variables:
 
 - `PORT`
 - `DB_DRIVER`
@@ -111,7 +111,7 @@ Ktor tasks API is running
 - `DB_PASSWORD`
 - `DB_MAX_POOL_SIZE`
 
-Пример для PowerShell:
+Example for PowerShell:
 
 ```powershell
 $env:PORT = "8081"
@@ -119,29 +119,29 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 .\gradlew.bat run
 ```
 
-## API endpoints
+## API Endpoints
 
 ### Categories
 
-- `GET /api/categories` - получить все категории
-- `GET /api/categories/{id}` - получить категорию по id
-- `POST /api/categories` - создать категорию
-- `PUT /api/categories/{id}` - обновить категорию
-- `DELETE /api/categories/{id}` - удалить категорию
-- `GET /api/categories/{id}/tasks` - получить все задачи категории
+- `GET /api/categories` - get all categories
+- `GET /api/categories/{id}` - get category by id
+- `POST /api/categories` - create a category
+- `PUT /api/categories/{id}` - update a category
+- `DELETE /api/categories/{id}` - delete a category
+- `GET /api/categories/{id}/tasks` - get all tasks for a category
 
 ### Tasks
 
-- `GET /api/tasks` - получить все задачи
-- `GET /api/tasks/{id}` - получить задачу по id
-- `POST /api/tasks` - создать задачу
-- `PUT /api/tasks/{id}` - обновить задачу
-- `DELETE /api/tasks/{id}` - удалить задачу
-- `GET /api/tasks?categoryId=1` - получить задачи по категории
+- `GET /api/tasks` - get all tasks
+- `GET /api/tasks/{id}` - get task by id
+- `POST /api/tasks` - create a task
+- `PUT /api/tasks/{id}` - update a task
+- `DELETE /api/tasks/{id}` - delete a task
+- `GET /api/tasks?categoryId=1` - get tasks filtered by category
 
-## Формат JSON
+## JSON Format
 
-### Создание категории
+### Create Category
 
 ```json
 {
@@ -149,7 +149,7 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-### Создание задачи
+### Create Task
 
 ```json
 {
@@ -159,55 +159,55 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-## Как тестировать проект в Postman
+## How to Test the Project in Postman
 
-### 1. Создать environment
+### 1. Create an Environment
 
-В Postman создай environment, например `Local Ktor API`, и добавь переменную:
+In Postman, create an environment, for example `Local Ktor API`, and add this variable:
 
 - `baseUrl = http://localhost:8080`
 
-После этого во всех запросах можно использовать `{{baseUrl}}`.
+After that, use `{{baseUrl}}` in all requests.
 
-### 2. Создать коллекцию
+### 2. Create a Collection
 
-Создай коллекцию `Ktor Tasks API` и добавь в нее запросы ниже.
+Create a collection named `Ktor Tasks API` and add the requests listed below.
 
-### 3. Базовая проверка запуска
+### 3. Basic Startup Check
 
 #### Request: Root
 
 - Method: `GET`
 - URL: `{{baseUrl}}/`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
 - Body: `Ktor tasks API is running`
 
-### 4. Проверка seed-данных
+### 4. Verify Seed Data
 
 #### Request: Get All Categories
 
 - Method: `GET`
 - URL: `{{baseUrl}}/api/categories`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- В ответе есть минимум 3 категории: `Work`, `Study`, `Home`
+- The response contains at least 3 categories: `Work`, `Study`, `Home`
 
 #### Request: Get All Tasks
 
 - Method: `GET`
 - URL: `{{baseUrl}}/api/tasks`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- В ответе есть seed-задачи
+- The response contains seeded tasks
 
-### 5. CRUD для категорий
+### 5. Category CRUD
 
 #### Request: Create Category
 
@@ -222,20 +222,20 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `201 Created`
-- В ответе приходит созданная категория с `id`
+- The response contains the created category with an `id`
 
 #### Request: Get Category By Id
 
 - Method: `GET`
 - URL: `{{baseUrl}}/api/categories/1`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- Возвращается категория с `id = 1`
+- Returns the category with `id = 1`
 
 #### Request: Update Category
 
@@ -250,23 +250,23 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- Имя категории обновляется
+- The category name is updated
 
 #### Request: Delete Category
 
 - Method: `DELETE`
 - URL: `{{baseUrl}}/api/categories/1`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `204 No Content`
 
-Важно: у задач настроен `onDelete = CASCADE`, поэтому при удалении категории связанные задачи тоже удаляются.
+Important: tasks use `onDelete = CASCADE`, so deleting a category also deletes its related tasks.
 
-### 6. CRUD для задач
+### 6. Task CRUD
 
 #### Request: Create Task
 
@@ -283,20 +283,20 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `201 Created`
-- В ответе приходит созданная задача с `id`
+- The response contains the created task with an `id`
 
 #### Request: Get Task By Id
 
 - Method: `GET`
 - URL: `{{baseUrl}}/api/tasks/1`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- Возвращается задача с `id = 1`
+- Returns the task with `id = 1`
 
 #### Request: Update Task
 
@@ -313,59 +313,59 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- Задача обновляется
+- The task is updated
 
 #### Request: Delete Task
 
 - Method: `DELETE`
 - URL: `{{baseUrl}}/api/tasks/1`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `204 No Content`
 
-### 7. Проверка связанных данных
+### 7. Related Data Checks
 
 #### Request: Get Tasks By Category Path
 
 - Method: `GET`
 - URL: `{{baseUrl}}/api/categories/1/tasks`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- Возвращается список задач, принадлежащих категории `1`
+- Returns the list of tasks that belong to category `1`
 
 #### Request: Get Tasks By Category Query
 
 - Method: `GET`
 - URL: `{{baseUrl}}/api/tasks?categoryId=1`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `200 OK`
-- Возвращаются только задачи выбранной категории
+- Returns only tasks from the selected category
 
-## Рекомендуемый порядок демонстрации в Postman
+## Recommended Demo Order in Postman
 
-### 1. Проверка запуска
+### 1. Startup Check
 
 - `GET {{baseUrl}}/`
 
-### 2. Проверка seed-данных
+### 2. Seed Data Check
 
 - `GET {{baseUrl}}/api/categories`
 - `GET {{baseUrl}}/api/tasks`
 
-### 3. Демонстрация связей
+### 3. Relationship Demo
 
 - `GET {{baseUrl}}/api/categories/1/tasks`
 - `GET {{baseUrl}}/api/tasks?categoryId=1`
 
-### 4. Демонстрация CRUD
+### 4. CRUD Demo
 
 - `POST {{baseUrl}}/api/categories`
 - `POST {{baseUrl}}/api/tasks`
@@ -374,14 +374,14 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 - `DELETE {{baseUrl}}/api/tasks/{id}`
 - `DELETE {{baseUrl}}/api/categories/{id}`
 
-### 5. Демонстрация обработки ошибок
+### 5. Error Handling Demo
 
-- создать категорию с пустым именем
-- создать задачу с несуществующим `categoryId`
-- создать категорию с дублирующимся именем
-- запросить несуществующий `id`
+- create a category with an empty name
+- create a task with a non-existing `categoryId`
+- create a category with a duplicate name
+- request a non-existing `id`
 
-## Негативные проверки в Postman
+## Negative Test Cases in Postman
 
 ### Empty Category Name
 
@@ -396,7 +396,7 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `400 Bad Request`
 
@@ -415,9 +415,9 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-Ожидаемый результат:
+Expected result:
 
-- Status: `400 Bad Request` или `409 Conflict`
+- Status: `400 Bad Request` or `409 Conflict`
 
 ### Duplicate Category
 
@@ -432,7 +432,7 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `409 Conflict`
 
@@ -441,36 +441,36 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 - Method: `GET`
 - URL: `{{baseUrl}}/api/tasks/9999`
 
-Ожидаемый результат:
+Expected result:
 
 - Status: `404 Not Found`
 
-## Что проверить вручную
+## Manual Verification Checklist
 
-Чтобы убедиться, что проект соответствует заданию, проверь следующее:
+To make sure the project satisfies the assignment, verify the following:
 
-- сервер стартует без ошибок
-- таблицы создаются автоматически при первом запуске
-- seed-данные появляются только один раз
-- данные сохраняются после перезапуска сервера
-- CRUD работает и для категорий, и для задач
-- `GET /api/categories/{id}/tasks` возвращает связанные задачи
-- `GET /api/tasks?categoryId=...` корректно фильтрует данные
-- при неверном `id` возвращается `404`
-- при невалидном теле запроса или пустых полях возвращается `400`
-- при нарушении ограничений БД возвращается `409`
+- the server starts without errors
+- tables are created automatically on first startup
+- seed data appears only once
+- data is preserved after server restarts
+- CRUD works for both categories and tasks
+- `GET /api/categories/{id}/tasks` returns related tasks
+- `GET /api/tasks?categoryId=...` filters data correctly
+- invalid `id` returns `404`
+- invalid request body or blank fields return `400`
+- database constraint violations return `409`
 
-## Автотесты и сборка
+## Automated Tests and Build
 
-Если в окружении настроен Java 21, можно запустить:
+If Java 21 is configured in the environment, you can run:
 
 ```powershell
 .\gradlew.bat test
 .\gradlew.bat build
 ```
 
-Если `JAVA_HOME` не настроен, сначала нужно указать путь к JDK.
+If `JAVA_HOME` is not configured, set it before running Gradle.
 
-## Итог
+## Summary
 
-Проект представляет собой учебный, но полноценный REST API на Ktor с persistent database storage, связями между таблицами, асинхронным repository layer и удобной проверкой через Postman.
+This project is a small but complete Ktor REST API with persistent database storage, table relationships, an asynchronous repository layer, and a clear Postman-based testing workflow.
