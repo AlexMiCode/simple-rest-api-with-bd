@@ -1,0 +1,13 @@
+ktor:
+  application:
+    modules:
+      - com.example.ApplicationKt.module
+  deployment:
+    port: ${PORT:8080}
+
+database:
+  driver: ${DB_DRIVER:org.h2.Driver}
+  url: ${DB_URL:jdbc:h2:file:./data/tasks-db;AUTO_SERVER=TRUE}
+  user: ${DB_USER:sa}
+  password: ${DB_PASSWORD:}
+  maximumPoolSize: ${DB_MAX_POOL_SIZE:5}
