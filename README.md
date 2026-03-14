@@ -13,7 +13,7 @@ REST API на Ktor для работы с категориями и задачами. Проект использует реальную
 - Seed-данные при первом запуске
 - Полный CRUD для категорий и задач
 - Endpoint'ы для связанных данных и фильтрации
-- Обработка ошибок валидации, `not found` и constraint violations
+- Обработка ошибок валидации, `not found` и database constraint violations
 - `CallLogging` для логирования всех запросов
 - Конфигурация базы через `application.yaml` и environment variables
 
@@ -51,8 +51,8 @@ database:
 Это значит:
 
 - данные сохраняются после перезапуска сервера
-- при первом старте таблицы создаются автоматически
-- при первом старте добавляются seed-данные
+- таблицы создаются автоматически при первом запуске
+- seed-данные добавляются только при первом запуске
 
 ## Seed-данные
 
@@ -62,21 +62,19 @@ database:
 - Study
 - Home
 
-И 9 тестовых задач, привязанных к этим категориям.
+Также добавляются 9 тестовых задач, привязанных к этим категориям.
 
 ## Как запустить
 
-### 1. Убедиться, что установлен JDK
+### 1. Проверить JDK
 
 Проект рассчитан на Java 21.
-
-Проверка:
 
 ```powershell
 java -version
 ```
 
-### 2. Запустить приложение
+### 2. Запустить сервер
 
 Windows PowerShell:
 
@@ -90,19 +88,13 @@ Linux/macOS:
 ./gradlew run
 ```
 
-После запуска сервер будет доступен по адресу:
+После запуска приложение доступно по адресу:
 
 ```text
 http://localhost:8080
 ```
 
-Проверка health-like endpoint:
-
-```powershell
-curl http://localhost:8080/
-```
-
-Ожидаемый ответ:
+Корневой endpoint должен возвращать:
 
 ```text
 Ktor tasks API is running
@@ -167,136 +159,310 @@ $env:DB_URL = "jdbc:h2:file:./data/custom-db;AUTO_SERVER=TRUE"
 }
 ```
 
-## Как тестировать проект
+## Как тестировать проект в Postman
 
-Ниже набор команд, который покрывает основной сценарий проверки.
+### 1. Создать environment
 
-### 1. Проверить корневой endpoint
+В Postman создай environment, например `Local Ktor API`, и добавь переменную:
 
-```powershell
-curl http://localhost:8080/
+- `baseUrl = http://localhost:8080`
+
+После этого во всех запросах можно использовать `{{baseUrl}}`.
+
+### 2. Создать коллекцию
+
+Создай коллекцию `Ktor Tasks API` и добавь в нее запросы ниже.
+
+### 3. Базовая проверка запуска
+
+#### Request: Root
+
+- Method: `GET`
+- URL: `{{baseUrl}}/`
+
+Ожидаемый результат:
+
+- Status: `200 OK`
+- Body: `Ktor tasks API is running`
+
+### 4. Проверка seed-данных
+
+#### Request: Get All Categories
+
+- Method: `GET`
+- URL: `{{baseUrl}}/api/categories`
+
+Ожидаемый результат:
+
+- Status: `200 OK`
+- В ответе есть минимум 3 категории: `Work`, `Study`, `Home`
+
+#### Request: Get All Tasks
+
+- Method: `GET`
+- URL: `{{baseUrl}}/api/tasks`
+
+Ожидаемый результат:
+
+- Status: `200 OK`
+- В ответе есть seed-задачи
+
+### 5. CRUD для категорий
+
+#### Request: Create Category
+
+- Method: `POST`
+- URL: `{{baseUrl}}/api/categories`
+- Header: `Content-Type: application/json`
+- Body -> raw -> JSON:
+
+```json
+{
+  "name": "Fitness"
+}
 ```
 
-### 2. Получить все категории
+Ожидаемый результат:
 
-```powershell
-curl http://localhost:8080/api/categories
+- Status: `201 Created`
+- В ответе приходит созданная категория с `id`
+
+#### Request: Get Category By Id
+
+- Method: `GET`
+- URL: `{{baseUrl}}/api/categories/1`
+
+Ожидаемый результат:
+
+- Status: `200 OK`
+- Возвращается категория с `id = 1`
+
+#### Request: Update Category
+
+- Method: `PUT`
+- URL: `{{baseUrl}}/api/categories/1`
+- Header: `Content-Type: application/json`
+- Body -> raw -> JSON:
+
+```json
+{
+  "name": "Work Updated"
+}
 ```
 
-### 3. Получить все задачи
+Ожидаемый результат:
 
-```powershell
-curl http://localhost:8080/api/tasks
+- Status: `200 OK`
+- Имя категории обновляется
+
+#### Request: Delete Category
+
+- Method: `DELETE`
+- URL: `{{baseUrl}}/api/categories/1`
+
+Ожидаемый результат:
+
+- Status: `204 No Content`
+
+Важно: у задач настроен `onDelete = CASCADE`, поэтому при удалении категории связанные задачи тоже удаляются.
+
+### 6. CRUD для задач
+
+#### Request: Create Task
+
+- Method: `POST`
+- URL: `{{baseUrl}}/api/tasks`
+- Header: `Content-Type: application/json`
+- Body -> raw -> JSON:
+
+```json
+{
+  "title": "Morning workout",
+  "description": "30 minutes cardio",
+  "categoryId": 1
+}
 ```
 
-### 4. Получить задачи категории
+Ожидаемый результат:
 
-```powershell
-curl http://localhost:8080/api/categories/1/tasks
+- Status: `201 Created`
+- В ответе приходит созданная задача с `id`
+
+#### Request: Get Task By Id
+
+- Method: `GET`
+- URL: `{{baseUrl}}/api/tasks/1`
+
+Ожидаемый результат:
+
+- Status: `200 OK`
+- Возвращается задача с `id = 1`
+
+#### Request: Update Task
+
+- Method: `PUT`
+- URL: `{{baseUrl}}/api/tasks/1`
+- Header: `Content-Type: application/json`
+- Body -> raw -> JSON:
+
+```json
+{
+  "title": "Updated task",
+  "description": "Updated description",
+  "categoryId": 1
+}
 ```
 
-### 5. Отфильтровать задачи по categoryId
+Ожидаемый результат:
 
-```powershell
-curl "http://localhost:8080/api/tasks?categoryId=1"
+- Status: `200 OK`
+- Задача обновляется
+
+#### Request: Delete Task
+
+- Method: `DELETE`
+- URL: `{{baseUrl}}/api/tasks/1`
+
+Ожидаемый результат:
+
+- Status: `204 No Content`
+
+### 7. Проверка связанных данных
+
+#### Request: Get Tasks By Category Path
+
+- Method: `GET`
+- URL: `{{baseUrl}}/api/categories/1/tasks`
+
+Ожидаемый результат:
+
+- Status: `200 OK`
+- Возвращается список задач, принадлежащих категории `1`
+
+#### Request: Get Tasks By Category Query
+
+- Method: `GET`
+- URL: `{{baseUrl}}/api/tasks?categoryId=1`
+
+Ожидаемый результат:
+
+- Status: `200 OK`
+- Возвращаются только задачи выбранной категории
+
+## Рекомендуемый порядок демонстрации в Postman
+
+### 1. Проверка запуска
+
+- `GET {{baseUrl}}/`
+
+### 2. Проверка seed-данных
+
+- `GET {{baseUrl}}/api/categories`
+- `GET {{baseUrl}}/api/tasks`
+
+### 3. Демонстрация связей
+
+- `GET {{baseUrl}}/api/categories/1/tasks`
+- `GET {{baseUrl}}/api/tasks?categoryId=1`
+
+### 4. Демонстрация CRUD
+
+- `POST {{baseUrl}}/api/categories`
+- `POST {{baseUrl}}/api/tasks`
+- `PUT {{baseUrl}}/api/categories/{id}`
+- `PUT {{baseUrl}}/api/tasks/{id}`
+- `DELETE {{baseUrl}}/api/tasks/{id}`
+- `DELETE {{baseUrl}}/api/categories/{id}`
+
+### 5. Демонстрация обработки ошибок
+
+- создать категорию с пустым именем
+- создать задачу с несуществующим `categoryId`
+- создать категорию с дублирующимся именем
+- запросить несуществующий `id`
+
+## Негативные проверки в Postman
+
+### Empty Category Name
+
+- Method: `POST`
+- URL: `{{baseUrl}}/api/categories`
+- Header: `Content-Type: application/json`
+- Body:
+
+```json
+{
+  "name": ""
+}
 ```
 
-### 6. Создать новую категорию
+Ожидаемый результат:
 
-```powershell
-curl -Method POST http://localhost:8080/api/categories `
-  -ContentType "application/json" `
-  -Body '{"name":"Fitness"}'
+- Status: `400 Bad Request`
+
+### Invalid Category For Task
+
+- Method: `POST`
+- URL: `{{baseUrl}}/api/tasks`
+- Header: `Content-Type: application/json`
+- Body:
+
+```json
+{
+  "title": "Broken task",
+  "description": "Test",
+  "categoryId": 999
+}
 ```
 
-### 7. Создать новую задачу
+Ожидаемый результат:
 
-```powershell
-curl -Method POST http://localhost:8080/api/tasks `
-  -ContentType "application/json" `
-  -Body '{"title":"Morning workout","description":"30 minutes cardio","categoryId":1}'
+- Status: `400 Bad Request` или `409 Conflict`
+
+### Duplicate Category
+
+- Method: `POST`
+- URL: `{{baseUrl}}/api/categories`
+- Header: `Content-Type: application/json`
+- Body:
+
+```json
+{
+  "name": "Work"
+}
 ```
 
-### 8. Обновить категорию
+Ожидаемый результат:
 
-```powershell
-curl -Method PUT http://localhost:8080/api/categories/1 `
-  -ContentType "application/json" `
-  -Body '{"name":"Work Updated"}'
-```
+- Status: `409 Conflict`
 
-### 9. Обновить задачу
+### Not Found
 
-```powershell
-curl -Method PUT http://localhost:8080/api/tasks/1 `
-  -ContentType "application/json" `
-  -Body '{"title":"Updated task","description":"Updated description","categoryId":1}'
-```
+- Method: `GET`
+- URL: `{{baseUrl}}/api/tasks/9999`
 
-### 10. Удалить задачу
+Ожидаемый результат:
 
-```powershell
-curl -Method DELETE http://localhost:8080/api/tasks/1
-```
-
-### 11. Удалить категорию
-
-```powershell
-curl -Method DELETE http://localhost:8080/api/categories/1
-```
-
-Важно: у задач настроен `onDelete = CASCADE`, поэтому при удалении категории связанные задачи тоже будут удалены.
+- Status: `404 Not Found`
 
 ## Что проверить вручную
 
-Чтобы убедиться, что проект соответствует заданию, стоит проверить следующее:
+Чтобы убедиться, что проект соответствует заданию, проверь следующее:
 
 - сервер стартует без ошибок
 - таблицы создаются автоматически при первом запуске
 - seed-данные появляются только один раз
 - данные сохраняются после перезапуска сервера
 - CRUD работает и для категорий, и для задач
-- endpoint `GET /api/categories/{id}/tasks` возвращает связанные задачи
-- endpoint `GET /api/tasks?categoryId=...` корректно фильтрует данные
+- `GET /api/categories/{id}/tasks` возвращает связанные задачи
+- `GET /api/tasks?categoryId=...` корректно фильтрует данные
 - при неверном `id` возвращается `404`
 - при невалидном теле запроса или пустых полях возвращается `400`
 - при нарушении ограничений БД возвращается `409`
 
-## Примеры негативных проверок
+## Автотесты и сборка
 
-### Пустое имя категории
-
-```powershell
-curl -Method POST http://localhost:8080/api/categories `
-  -ContentType "application/json" `
-  -Body '{"name":""}'
-```
-
-Ожидается `400 Bad Request`.
-
-### Несуществующая категория у задачи
-
-```powershell
-curl -Method POST http://localhost:8080/api/tasks `
-  -ContentType "application/json" `
-  -Body '{"title":"Broken task","description":"Test","categoryId":999}'
-```
-
-Ожидается `400 Bad Request` или `409 Conflict` в зависимости от типа ошибки.
-
-### Дубликат категории
-
-```powershell
-curl -Method POST http://localhost:8080/api/categories `
-  -ContentType "application/json" `
-  -Body '{"name":"Work"}'
-```
-
-Ожидается `409 Conflict`.
-
-## Автотесты
-
-Если в окружении настроен Java 21, можно запустить тесты и сборку:
+Если в окружении настроен Java 21, можно запустить:
 
 ```powershell
 .\gradlew.bat test
@@ -307,4 +473,4 @@ curl -Method POST http://localhost:8080/api/categories `
 
 ## Итог
 
-Проект представляет собой учебный, но полноценный REST API на Ktor с persistent database storage, связями между таблицами, асинхронным repository layer и удобной проверкой через HTTP-запросы.
+Проект представляет собой учебный, но полноценный REST API на Ktor с persistent database storage, связями между таблицами, асинхронным repository layer и удобной проверкой через Postman.
